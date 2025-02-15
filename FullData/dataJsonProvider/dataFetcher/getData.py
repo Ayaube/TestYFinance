@@ -90,9 +90,6 @@ fetch_and_add_data("info", lambda: ticker.info, "ticker.info")
 # Récupérer les cibles de prix des analystes
 fetch_and_add_data("analyst_price_targets", lambda: ticker.analyst_price_targets, "ticker.analyst_price_targets")
 
-# Récupérer les actions
-fetch_and_add_data("actions", lambda: ticker.actions.to_dict(orient='list'), "ticker.actions")
-
 # Récupérer les dividendes
 fetch_and_add_data("dividends", lambda: ticker.dividends.to_dict(), "ticker.dividends")
 
