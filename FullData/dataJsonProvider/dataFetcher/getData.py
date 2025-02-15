@@ -30,24 +30,29 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 import subprocess
+import logging
+from pathlib import Path
+
+# Configuration du logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Activer le mode debug pour yfinance
 yf.enable_debug_mode()
 
 # Chemin du script actuel
-script_path = os.path.abspath(__file__)
+script_path = Path(__file__).resolve()
 
 # Chemin du dossier contenant le script
-script_dir = os.path.dirname(script_path)
+script_dir = script_path.parent
 
 # Chemin du dossier de stockage (memory) au même niveau que le dossier contenant le script
-storage_path = os.path.join(script_dir, '..', 'memory/full')
+storage_path = script_dir.parent / 'memory/full'
 
 # Assurer que le dossier de stockage existe
-os.makedirs(storage_path, exist_ok=True)
+storage_path.mkdir(parents=True, exist_ok=True)
 
 # Initialiser le ticker pour GOOG
-ticker = yf.Ticker("AMD")
+ticker = yf.Ticker("NVDA")
 
 # Dictionnaire pour stocker les données et les requêtes
 data = {}
@@ -56,10 +61,7 @@ data = {}
 def add_data(key, value, request):
     if isinstance(value, dict):
         value = {str(k): v for k, v in value.items()}
-    data[key] = {
-        "request": request,
-        "data": value
-    }
+    data[key] = {"request": request, "data": value}
 
 # Fonction pour récupérer et ajouter les données avec gestion des erreurs
 def fetch_and_add_data(key, fetch_function, request):
@@ -68,9 +70,9 @@ def fetch_and_add_data(key, fetch_function, request):
         if value is not None and (not hasattr(value, 'empty') or not value.empty):
             add_data(key, value, request)
         else:
-            print(f"Aucune donnée récupérée pour {key}")
+            logging.warning(f"Aucune donnée récupérée pour {key}")
     except Exception as e:
-        print(f"Erreur lors de la récupération des données pour {key}: {e}")
+        logging.error(f"Erreur lors de la récupération des données pour {key}: {e}")
 
 # Récupérer les données historiques pour les 5 dernières années
 fetch_and_add_data("history", lambda: ticker.history(period="5y").reset_index().to_dict(orient='list'), "ticker.history(period='5y')")
@@ -157,13 +159,10 @@ fetch_and_add_data("news", lambda: ticker.news, "ticker.news")
 fetch_and_add_data("sustainability", lambda: ticker.sustainability.to_dict(), "ticker.sustainability")
 
 # Récupérer les upgrades/downgrades avec la date
-fetch_and_add_data("upgrades_downgrades",
-    lambda: ticker.get_upgrades_downgrades().reset_index().to_dict(orient='list'),
-    "ticker.upgrades_downgrades"
-)
+fetch_and_add_data("upgrades_downgrades", lambda: ticker.get_upgrades_downgrades().reset_index().to_dict(orient='list'), "ticker.upgrades_downgrades")
+
 # Récupérer les détenteurs de la liste des insiders
 fetch_and_add_data("insider_roster_holders", lambda: ticker.get_insider_roster_holders().to_dict(orient='list'), "ticker.get_insider_roster_holders()")
-
 
 # Fonction pour nettoyer les données et remplacer les valeurs NaN par None
 def clean_data(obj):
@@ -197,18 +196,18 @@ now = datetime.now()
 filename = f"{ticker.ticker}_{now.strftime('%Y%m%d_%H%M')}.json"
 
 # Chemin complet du fichier JSON
-file_path = os.path.join(storage_path, filename)
+file_path = storage_path / filename
 
 # Écrire les données dans un fichier JSON
 with open(file_path, "w") as f:
     json.dump(cleaned_data, f, indent=4, default=json_serializer)
 
-print(f"Les données ont été enregistrées dans {file_path}")
+logging.info(f"Les données ont été enregistrées dans {file_path}")
 
 # Chemin du script cleanData.py
-clean_data_script_path = os.path.join(script_dir, '..', 'dataCleaner', 'cleanData.py')
+clean_data_script_path = script_dir.parent / 'dataCleaner' / 'cleanData.py'
 
 # Exécuter le script cleanData.py
-subprocess.run(['python', clean_data_script_path, file_path])
+subprocess.run(['python', str(clean_data_script_path), str(file_path)])
 
-print(f"Le script cleanData.py a été exécuté avec succès.")
+logging.info(f"Le script cleanData.py a été exécuté avec succès.")

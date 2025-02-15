@@ -34,35 +34,40 @@ import json
 import os
 import sys
 from datetime import datetime
+import logging
+from pathlib import Path
+
+# Configuration du logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Vérifier si le chemin du fichier JSON est passé en argument
 if len(sys.argv) != 2:
-    print("Usage: python cleanData.py <input_file_path>")
+    logging.error("Usage: python cleanData.py <input_file_path>")
     sys.exit(1)
 
 input_file_path = sys.argv[1]
 
 # Chemin du script actuel
-script_path = os.path.abspath(__file__)
+script_path = Path(__file__).resolve()
 
 # Chemin du dossier contenant le script
-script_dir = os.path.dirname(script_path)
+script_dir = script_path.parent
 
 # Chemin du dossier de stockage (memory) au même niveau que le dossier contenant le script
-storage_path = os.path.join(script_dir, '..', 'memory')
+storage_path = script_dir.parent / 'memory'
 
 # Chemin du sous-dossier cleaned
-cleaned_storage_path = os.path.join(storage_path, 'cleaned')
+cleaned_storage_path = storage_path / 'cleaned'
 
 # Assurer que le dossier cleaned existe
-os.makedirs(cleaned_storage_path, exist_ok=True)
+cleaned_storage_path.mkdir(parents=True, exist_ok=True)
 
 # Générer le nom du fichier nettoyé
-base_filename = os.path.basename(input_file_path)
-cleaned_filename = os.path.splitext(base_filename)[0] + '_cleaned.json'
+base_filename = Path(input_file_path).name
+cleaned_filename = base_filename.replace('.json', '_cleaned.json')
 
 # Chemin du fichier JSON nettoyé
-output_file_path = os.path.join(cleaned_storage_path, cleaned_filename)
+output_file_path = cleaned_storage_path / cleaned_filename
 
 # Fonction pour nettoyer les données de balance_sheet
 def clean_balance_sheet(data):
@@ -208,8 +213,12 @@ def clean_insider_roster_holders(data):
     return data
 
 # Lire le fichier JSON généré par le premier script
-with open(input_file_path, 'r') as f:
-    data = json.load(f)
+try:
+    with open(input_file_path, 'r') as f:
+        data = json.load(f)
+except Exception as e:
+    logging.error(f"Erreur lors de la lecture du fichier JSON: {e}")
+    sys.exit(1)
 
 # Nettoyer les données de balance_sheet
 cleaned_data = clean_balance_sheet(data)
@@ -230,7 +239,10 @@ cleaned_data = clean_news(cleaned_data)
 cleaned_data = clean_insider_roster_holders(cleaned_data)
 
 # Écrire les données nettoyées dans un nouveau fichier JSON
-with open(output_file_path, 'w') as f:
-    json.dump(cleaned_data, f, indent=4)
-
-print(f"Les données nettoyées ont été enregistrées dans {output_file_path}")
+try:
+    with open(output_file_path, 'w') as f:
+        json.dump(cleaned_data, f, indent=4)
+    logging.info(f"Les données nettoyées ont été enregistrées dans {output_file_path}")
+except Exception as e:
+    logging.error(f"Erreur lors de l'écriture du fichier JSON nettoyé: {e}")
+    sys.exit(1)
