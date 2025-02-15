@@ -8,7 +8,8 @@ Fonctionnement :
 4. Nettoyer les données de balance_sheet pour ne conserver que les éléments essentiels.
 5. Nettoyer les données de quarterly_income_stmt pour ne conserver que les éléments essentiels.
 6. Nettoyer les données de info pour ne conserver que les éléments essentiels.
-7. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
+7. Nettoyer les données de cash_flow pour ne conserver que les éléments essentiels.
+8. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
 
 Arguments :
 - <input_file_path> : Chemin du fichier JSON à nettoyer.
@@ -21,7 +22,8 @@ Ordre logique des choses :
 5. Nettoyage des données de balance_sheet.
 6. Nettoyage des données de quarterly_income_stmt.
 7. Nettoyage des données de info.
-8. Écriture des données nettoyées dans un nouveau fichier JSON.
+8. Nettoyage des données de cash_flow.
+9. Écriture des données nettoyées dans un nouveau fichier JSON.
 """
 
 import json
@@ -127,20 +129,42 @@ def clean_info(data):
             "enterpriseToRevenue", "enterpriseToEbitda", "dividendRate",
             "dividendYield", "payoutRatio", "exDividendDate", "totalCash",
             "totalDebt", "debtToEquity", "quickRatio", "currentRatio",
-            "freeCashflow", "operatingCashflow",
-            "targetHighPrice", "targetLowPrice", "targetMeanPrice",
-            "recommendationMean", "numberOfAnalystOpinions", "beta",
-            "52WeekChange", "SandP52WeekChange", "fiftyTwoWeekHigh",
-            "fiftyTwoWeekLow", "fiftyDayAverage", "twoHundredDayAverage",
+            "freeCashflow", "operatingCashflow", "targetHighPrice",
+            "targetLowPrice", "targetMeanPrice", "recommendationMean",
+            "numberOfAnalystOpinions", "beta", "52WeekChange", "SandP52WeekChange",
+            "fiftyTwoWeekHigh", "fiftyTwoWeekLow", "fiftyDayAverage", "twoHundredDayAverage",
             "lastDividendValue", "lastDividendDate", "trailingPegRatio",
-            "sharesOutstanding", "floatShares",
-            "heldPercentInstitutions", "heldPercentInsiders"
+            "sharesOutstanding", "floatShares", "heldPercentInstitutions", "heldPercentInsiders"
         ]
 
         # Filtrer les données pour ne conserver que les éléments essentiels
         cleaned_data = {k: v for k, v in info.items() if k in keep_keys}
 
         data['info']['data'] = cleaned_data
+    return data
+
+# Fonction pour nettoyer les données de cash_flow
+def clean_cash_flow(data):
+    if 'cash_flow' in data:
+        cash_flow = data['cash_flow']['data']
+
+        # Éléments à garder
+        keep_keys = [
+            "Operating Cash Flow", "Cash Flow From Continuing Operating Activities",
+            "Net Income From Continuing Operations", "Depreciation And Amortization",
+            "Stock Based Compensation", "Deferred Tax", "Investing Cash Flow",
+            "Capital Expenditure", "Net PPE Purchase And Sale", "Net Investment Purchase And Sale",
+            "Financing Cash Flow", "Repurchase Of Capital Stock", "Cash Dividends Paid",
+            "Long Term Debt Issuance", "Long Term Debt Payments", "Net Issuance Payments Of Debt",
+            "End Cash Position", "Beginning Cash Position", "Changes In Cash"
+        ]
+
+        # Filtrer les données pour ne conserver que les éléments essentiels
+        cleaned_data = {}
+        for date, values in cash_flow.items():
+            cleaned_data[date] = {k: v for k, v in values.items() if k in keep_keys}
+
+        data['cash_flow']['data'] = cleaned_data
     return data
 
 # Lire le fichier JSON généré par le premier script
@@ -155,6 +179,9 @@ cleaned_data = clean_quarterly_income_stmt(cleaned_data)
 
 # Nettoyer les données de info
 cleaned_data = clean_info(cleaned_data)
+
+# Nettoyer les données de cash_flow
+cleaned_data = clean_cash_flow(cleaned_data)
 
 # Écrire les données nettoyées dans un nouveau fichier JSON
 with open(output_file_path, 'w') as f:
