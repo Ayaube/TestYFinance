@@ -47,7 +47,7 @@ storage_path = os.path.join(script_dir, '..', 'memory/full')
 os.makedirs(storage_path, exist_ok=True)
 
 # Initialiser le ticker pour GOOG
-ticker = yf.Ticker("GOOG")
+ticker = yf.Ticker("AMD")
 
 # Dictionnaire pour stocker les données et les requêtes
 data = {}
@@ -74,6 +74,9 @@ def fetch_and_add_data(key, fetch_function, request):
 
 # Récupérer les données historiques pour les 5 dernières années
 fetch_and_add_data("history", lambda: ticker.history(period="5y").reset_index().to_dict(orient='list'), "ticker.history(period='5y')")
+
+# Récupérer le numéro ISIN
+fetch_and_add_data("isin", lambda: ticker.get_isin(), "ticker.get_isin()")
 
 # Récupérer les bilans
 fetch_and_add_data("balance_sheet", lambda: ticker.balance_sheet.to_dict(), "ticker.balance_sheet")
@@ -153,23 +156,14 @@ fetch_and_add_data("news", lambda: ticker.news, "ticker.news")
 # Récupérer les données de durabilité
 fetch_and_add_data("sustainability", lambda: ticker.sustainability.to_dict(), "ticker.sustainability")
 
-# Récupérer les mises à jour et les baisses de cotation
-fetch_and_add_data("upgrades_downgrades", lambda: ticker.upgrades_downgrades.to_dict(orient='list'), "ticker.upgrades_downgrades")
-
-# Récupérer les informations rapides
-fetch_and_add_data("fast_info", lambda: ticker.fast_info, "ticker.fast_info")
-
-# Récupérer les informations détaillées sur les actions
-fetch_and_add_data("shares_full", lambda: ticker.get_shares_full().to_dict(), "ticker.get_shares_full()")
-
+# Récupérer les upgrades/downgrades avec la date
+fetch_and_add_data("upgrades_downgrades",
+    lambda: ticker.get_upgrades_downgrades().reset_index().to_dict(orient='list'),
+    "ticker.upgrades_downgrades"
+)
 # Récupérer les détenteurs de la liste des insiders
 fetch_and_add_data("insider_roster_holders", lambda: ticker.get_insider_roster_holders().to_dict(orient='list'), "ticker.get_insider_roster_holders()")
 
-# Récupérer les métadonnées des données historiques
-fetch_and_add_data("history_metadata", lambda: ticker.get_history_metadata(), "ticker.get_history_metadata()")
-
-# Récupérer le numéro ISIN
-fetch_and_add_data("isin", lambda: ticker.get_isin(), "ticker.get_isin()")
 
 # Fonction pour nettoyer les données et remplacer les valeurs NaN par None
 def clean_data(obj):

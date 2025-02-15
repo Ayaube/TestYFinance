@@ -9,7 +9,9 @@ Fonctionnement :
 5. Nettoyer les données de quarterly_income_stmt pour ne conserver que les éléments essentiels.
 6. Nettoyer les données de info pour ne conserver que les éléments essentiels.
 7. Nettoyer les données de cash_flow pour ne conserver que les éléments essentiels.
-8. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
+8. Nettoyer les données de news pour ne conserver que les éléments essentiels.
+9. Nettoyer les données de insider_roster_holders pour ne conserver que les éléments essentiels.
+10. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
 
 Arguments :
 - <input_file_path> : Chemin du fichier JSON à nettoyer.
@@ -23,7 +25,9 @@ Ordre logique des choses :
 6. Nettoyage des données de quarterly_income_stmt.
 7. Nettoyage des données de info.
 8. Nettoyage des données de cash_flow.
-9. Écriture des données nettoyées dans un nouveau fichier JSON.
+9. Nettoyage des données de news.
+10. Nettoyage des données de insider_roster_holders.
+11. Écriture des données nettoyées dans un nouveau fichier JSON.
 """
 
 import json
@@ -167,6 +171,42 @@ def clean_cash_flow(data):
         data['cash_flow']['data'] = cleaned_data
     return data
 
+# Fonction pour nettoyer les données de news
+def clean_news(data):
+    if 'news' in data:
+        news = data['news']['data']
+
+        # Éléments à garder
+        keep_keys = [
+            "id", "title", "summary", "pubDate", "canonicalUrl"
+        ]
+
+        # Filtrer les données pour ne conserver que les éléments essentiels
+        cleaned_data = []
+        for item in news:
+            cleaned_item = {k: v for k, v in item['content'].items() if k in keep_keys}
+            cleaned_data.append({"id": item["id"], "content": cleaned_item})
+
+        data['news']['data'] = cleaned_data
+    return data
+
+# Fonction pour nettoyer les données de insider_roster_holders
+def clean_insider_roster_holders(data):
+    if 'insider_roster_holders' in data:
+        insider_roster_holders = data['insider_roster_holders']['data']
+
+        # Éléments à garder
+        keep_keys = [
+            "Name", "Position", "Most Recent Transaction", "Latest Transaction Date",
+            "Shares Owned Directly", "Shares Owned Indirectly"
+        ]
+
+        # Filtrer les données pour ne conserver que les éléments essentiels
+        cleaned_data = {k: v for k, v in insider_roster_holders.items() if k in keep_keys}
+
+        data['insider_roster_holders']['data'] = cleaned_data
+    return data
+
 # Lire le fichier JSON généré par le premier script
 with open(input_file_path, 'r') as f:
     data = json.load(f)
@@ -182,6 +222,12 @@ cleaned_data = clean_info(cleaned_data)
 
 # Nettoyer les données de cash_flow
 cleaned_data = clean_cash_flow(cleaned_data)
+
+# Nettoyer les données de news
+cleaned_data = clean_news(cleaned_data)
+
+# Nettoyer les données de insider_roster_holders
+cleaned_data = clean_insider_roster_holders(cleaned_data)
 
 # Écrire les données nettoyées dans un nouveau fichier JSON
 with open(output_file_path, 'w') as f:
