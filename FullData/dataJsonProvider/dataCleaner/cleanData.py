@@ -7,7 +7,8 @@ Fonctionnement :
 3. Générer le nom du fichier nettoyé.
 4. Nettoyer les données de balance_sheet pour ne conserver que les éléments essentiels.
 5. Nettoyer les données de quarterly_income_stmt pour ne conserver que les éléments essentiels.
-6. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
+6. Nettoyer les données de info pour ne conserver que les éléments essentiels.
+7. Écrire les données nettoyées dans un nouveau fichier JSON dans un sous-dossier 'cleaned'.
 
 Arguments :
 - <input_file_path> : Chemin du fichier JSON à nettoyer.
@@ -19,7 +20,8 @@ Ordre logique des choses :
 4. Lecture du fichier JSON.
 5. Nettoyage des données de balance_sheet.
 6. Nettoyage des données de quarterly_income_stmt.
-7. Écriture des données nettoyées dans un nouveau fichier JSON.
+7. Nettoyage des données de info.
+8. Écriture des données nettoyées dans un nouveau fichier JSON.
 """
 
 import json
@@ -110,6 +112,37 @@ def clean_quarterly_income_stmt(data):
         data['quarterly_income_stmt']['data'] = cleaned_data
     return data
 
+# Fonction pour nettoyer les données de info
+def clean_info(data):
+    if 'info' in data:
+        info = data['info']['data']
+
+        # Éléments à garder
+        keep_keys = [
+            "shortName", "symbol", "sector", "industry",
+            "totalRevenue", "grossProfits", "ebitda", "netIncomeToCommon",
+            "revenueGrowth", "earningsGrowth", "grossMargins", "operatingMargins",
+            "returnOnAssets", "returnOnEquity", "currentPrice", "marketCap",
+            "trailingPE", "forwardPE", "priceToBook", "priceToSalesTrailing12Months",
+            "enterpriseToRevenue", "enterpriseToEbitda", "dividendRate",
+            "dividendYield", "payoutRatio", "exDividendDate", "totalCash",
+            "totalDebt", "debtToEquity", "quickRatio", "currentRatio",
+            "freeCashflow", "operatingCashflow",
+            "targetHighPrice", "targetLowPrice", "targetMeanPrice",
+            "recommendationMean", "numberOfAnalystOpinions", "beta",
+            "52WeekChange", "SandP52WeekChange", "fiftyTwoWeekHigh",
+            "fiftyTwoWeekLow", "fiftyDayAverage", "twoHundredDayAverage",
+            "lastDividendValue", "lastDividendDate", "trailingPegRatio",
+            "sharesOutstanding", "floatShares",
+            "heldPercentInstitutions", "heldPercentInsiders"
+        ]
+
+        # Filtrer les données pour ne conserver que les éléments essentiels
+        cleaned_data = {k: v for k, v in info.items() if k in keep_keys}
+
+        data['info']['data'] = cleaned_data
+    return data
+
 # Lire le fichier JSON généré par le premier script
 with open(input_file_path, 'r') as f:
     data = json.load(f)
@@ -119,6 +152,9 @@ cleaned_data = clean_balance_sheet(data)
 
 # Nettoyer les données de quarterly_income_stmt
 cleaned_data = clean_quarterly_income_stmt(cleaned_data)
+
+# Nettoyer les données de info
+cleaned_data = clean_info(cleaned_data)
 
 # Écrire les données nettoyées dans un nouveau fichier JSON
 with open(output_file_path, 'w') as f:
